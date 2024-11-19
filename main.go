@@ -49,10 +49,14 @@ func main() {
 	http.HandleFunc("/random", func(w http.ResponseWriter, r *http.Request) {
 		imagePath := randomImage(images)
 		fmt.Println("Selected image:", imagePath)
+		// 禁用缓存
+		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
 		http.ServeFile(w, r, imagePath)
 	})
-	fmt.Println("Press Ctrl+C to stop server")
 	fmt.Printf("Server started on %v%v\n", Config.Server.Host, Config.Server.Port)
+	fmt.Println("Press Ctrl+C to stop server")
 	err = http.ListenAndServe(Config.Server.Port, nil)
 	if err != nil {
 		log.Panic("ListenAndServe: ", err)
