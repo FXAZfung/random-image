@@ -20,22 +20,20 @@ type Config struct {
 	} `yaml:"file"`
 }
 
-func InitConfig(filename string) (*Config, error) {
+var MainConfig *Config
+
+func InitConfig(filename string) error {
 	// 打开 YAML 文件
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer file.Close()
 
-	// 创建一个 Config 实例
-	var config Config
-
 	// 解析 YAML 文件内容
 	decoder := yaml.NewDecoder(file)
-	if err := decoder.Decode(&config); err != nil {
-		return nil, err
+	if err := decoder.Decode(&MainConfig); err != nil {
+		return err
 	}
-
-	return &config, nil
+	return nil
 }
