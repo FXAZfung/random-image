@@ -1,6 +1,6 @@
 app:
   name: "fxaz-random-image" # 应用名称 可自行修改
-  version: "1.0.0" # 版本号
+  version: "0.1.0" # 版本号
 server:
   port: ":11451" # 端口默认开放在11451中 可自行修改 不要忘记":"！
   host: "localhost" # 主机名默认为localhost 请自行修改为你的ip地址或域名
