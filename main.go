@@ -32,13 +32,12 @@ func randomImage(images []string) string {
 }
 
 func main() {
-	var err error
 
-	if err = config.InitConfig("./config.yml"); err != nil {
+	if err := config.InitConfig("./config.yml"); err != nil {
 		middleware.Logger.Fatal("config init error ", err)
 	}
 
-	if err = middleware.InitLogger(); err != nil {
+	if err := middleware.InitLogger(); err != nil {
 		middleware.Logger.Fatal("logger init error ", err)
 	}
 
