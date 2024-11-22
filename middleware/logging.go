@@ -31,22 +31,22 @@ func InitLogger() error {
 	}
 
 	// 创建 logger
-	Logger = log.New(file, "["+config.MainConfig.App.Name+"] ", log.LstdFlags)
+	Logger = log.New(file, "", log.LstdFlags)
 	return nil
 }
 
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// 获取客户端 IP
-		clientIP := r.RemoteAddr
-		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
-			clientIP = ip
-		}
-		// 记录请求信息
-		Logger.Printf("Method: %s, Path: %s, Client IP: %s, User-Agent: %s\n",
-			r.Method, r.URL.Path, clientIP, r.Header.Get("User-Agent"))
-		// 调用下一个处理器
+		//// 获取客户端 IP
+		//clientIP := r.RemoteAddr
+		//if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+		//	clientIP = ip
+		//}
+		//// 记录请求信息
+		//Logger.Printf("IP: %s, User-Agent: %s",
+		//	clientIP, r.Header.Get("User-Agent"))
+		//// 调用下一个处理器
 		next.ServeHTTP(w, r)
 	})
 }

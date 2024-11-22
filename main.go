@@ -8,7 +8,15 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 )
+
+// ImageData 用于存储图片的文件名和内容
+type ImageData struct {
+	Name    string
+	Content []byte
+}
 
 // 获取指定目录下的所有图片文件路径
 func getImages(dir string) ([]string, error) {
@@ -26,13 +34,67 @@ func getImages(dir string) ([]string, error) {
 	return images, err
 }
 
-// 随机选择一张图片
-func randomImage(images []string) string {
-	return images[rand.Intn(len(images))]
+// 从文件加载图片内容
+func loadImage(path string) (*ImageData, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return &ImageData{Name: filepath.Base(path), Content: content}, nil
+}
+
+// 随机选择图片并加载其内容到管道
+func producer(images []string, imageChan chan *ImageData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for {
+		select {
+		case imageChan <- func() *ImageData {
+			path := images[rand.Intn(len(images))]
+			image, err := loadImage(path)
+			if err != nil {
+				middleware.Logger.Printf("Error loading image %v: %v", path, err)
+				return nil
+			}
+			return image
+		}():
+		default:
+			time.Sleep(100 * time.Millisecond) // 管道满时稍作休眠
+		}
+	}
+}
+
+// 关闭管道
+func closeChannel(imageChan chan *ImageData, wg *sync.WaitGroup) {
+	wg.Wait()
+	close(imageChan)
+}
+
+// HTTP 处理函数
+func randomImageHandler(imageChan chan *ImageData) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		image := <-imageChan // 从管道中取图片
+		if image == nil {
+			http.Error(w, "Failed to load image", http.StatusInternalServerError)
+			return
+		}
+
+		// 记录请求信息
+		middleware.Logger.Printf("Image: %v, IP: %s, User-Agent: %s",
+			image.Name, r.RemoteAddr, r.Header.Get("User-Agent"))
+
+		// 设置 HTTP 头部，返回图片内容
+		w.Header().Set("Content-Type", "image/jpeg") // 假设为 JPEG，可以动态判断类型
+		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		_, err := w.Write(image.Content)
+		if err != nil {
+			middleware.Logger.Printf("Error writing image response: %v", err)
+		}
+	}
 }
 
 func main() {
-
 	if err := config.InitConfig("./config.yml"); err != nil {
 		middleware.Logger.Fatal("config init error ", err)
 	}
@@ -51,26 +113,23 @@ func main() {
 		middleware.Logger.Fatal("No images found in the directory")
 	}
 
+	// 图片管道及同步机制
+	imageChan := make(chan *ImageData, 10) // 缓冲大小为 10
+	var wg sync.WaitGroup
+
+	// 启动生产者 Goroutine
+	wg.Add(1)
+	go producer(images, imageChan, &wg)
+
 	// 创建基本路由
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/random", func(w http.ResponseWriter, r *http.Request) {
-		imagePath := randomImage(images)
-		middleware.Logger.Printf("IP: %v Selected image: %v\n", r.RemoteAddr, imagePath)
-		// 禁用缓存
-		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-		w.Header().Set("Pragma", "no-cache")
-		w.Header().Set("Expires", "0")
-		http.ServeFile(w, r, imagePath)
-	})
-
-	//mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./images"))))
-
+	mux.HandleFunc("/random", randomImageHandler(imageChan))
 	loggedMux := middleware.LoggingMiddleware(mux)
 
-	fmt.Printf("Server started on %v%v\n", config.MainConfig.Server.Host, config.MainConfig.Server.Port)
+	fmt.Printf("服务已经在本机的 %v%v/random 启动\n", config.MainConfig.Server.Host, config.MainConfig.Server.Port)
 	if err = http.ListenAndServe(config.MainConfig.Server.Port, loggedMux); err != nil {
 		middleware.Logger.Fatal("ListenAndServe: ", err)
-		return
 	}
+
+	defer closeChannel(imageChan, &wg)
 }
