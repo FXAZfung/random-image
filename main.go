@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 )
 
 // ImageData 用于存储图片的文件名和内容
@@ -40,6 +39,7 @@ func loadImage(path string) (*ImageData, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("load")
 	return &ImageData{Name: filepath.Base(path), Content: content}, nil
 }
 
@@ -55,10 +55,9 @@ func producer(images []string, imageChan chan *ImageData, wg *sync.WaitGroup) {
 				middleware.Logger.Printf("Error loading image %v: %v", path, err)
 				return nil
 			}
+			fmt.Println("push")
 			return image
 		}():
-		default:
-			time.Sleep(100 * time.Millisecond) // 管道满时稍作休眠
 		}
 	}
 }
