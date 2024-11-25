@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"fxaz-random-image/config"
-	"fxaz-random-image/middleware"
+	"fxaz-random-image/logger"
 	"math/rand"
 	"net/http"
 	"os"
@@ -39,7 +39,6 @@ func loadImage(path string) (*ImageData, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("load")
 	return &ImageData{Name: filepath.Base(path), Content: content}, nil
 }
 
@@ -52,10 +51,9 @@ func producer(images []string, imageChan chan *ImageData, wg *sync.WaitGroup) {
 			path := images[rand.Intn(len(images))]
 			image, err := loadImage(path)
 			if err != nil {
-				middleware.Logger.Printf("Error loading image %v: %v", path, err)
+				logger.Logger.Printf("Error loading image %v: %v", path, err)
 				return nil
 			}
-			fmt.Println("push")
 			return image
 		}():
 		}
@@ -78,7 +76,7 @@ func randomImageHandler(imageChan chan *ImageData) http.HandlerFunc {
 		}
 
 		// 记录请求信息
-		middleware.Logger.Printf("Image: %v, IP: %s, User-Agent: %s",
+		logger.Logger.Printf("Image: %v, IP: %s, User-Agent: %s",
 			image.Name, r.RemoteAddr, r.Header.Get("User-Agent"))
 
 		// 设置 HTTP 头部，返回图片内容
@@ -88,28 +86,28 @@ func randomImageHandler(imageChan chan *ImageData) http.HandlerFunc {
 		w.Header().Set("Expires", "0")
 		_, err := w.Write(image.Content)
 		if err != nil {
-			middleware.Logger.Printf("Error writing image response: %v", err)
+			logger.Logger.Printf("Error writing image response: %v", err)
 		}
 	}
 }
 
 func main() {
 	if err := config.InitConfig("./config.yml"); err != nil {
-		middleware.Logger.Fatal("config init error ", err)
+		logger.Logger.Fatal("config init error ", err)
 	}
 
-	if err := middleware.InitLogger(); err != nil {
-		middleware.Logger.Fatal("logger init error ", err)
+	if err := logger.InitLogger(); err != nil {
+		logger.Logger.Fatal("logger init error ", err)
 	}
 
 	imageDir := config.MainConfig.File.Path // 替换为本地图片文件夹路径
 	images, err := getImages(imageDir)
 	if err != nil {
-		middleware.Logger.Fatal("Error reading images ", err)
+		logger.Logger.Fatal("Error reading images ", err)
 	}
 
 	if len(images) == 0 {
-		middleware.Logger.Fatal("No images found in the directory")
+		logger.Logger.Fatal("No images found in the directory")
 	}
 
 	// 图片管道及同步机制
@@ -123,11 +121,10 @@ func main() {
 	// 创建基本路由
 	mux := http.NewServeMux()
 	mux.HandleFunc("/random", randomImageHandler(imageChan))
-	loggedMux := middleware.LoggingMiddleware(mux)
 
 	fmt.Printf("服务已经在本机的 %v%v/random 启动\n", config.MainConfig.Server.Host, config.MainConfig.Server.Port)
-	if err = http.ListenAndServe(config.MainConfig.Server.Port, loggedMux); err != nil {
-		middleware.Logger.Fatal("ListenAndServe: ", err)
+	if err = http.ListenAndServe(config.MainConfig.Server.Port, mux); err != nil {
+		logger.Logger.Fatal("ListenAndServe: ", err)
 	}
 
 	defer closeChannel(imageChan, &wg)
