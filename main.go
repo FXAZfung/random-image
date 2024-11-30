@@ -120,9 +120,9 @@ func main() {
 
 	// 创建基本路由
 	mux := http.NewServeMux()
-	mux.HandleFunc("/random", randomImageHandler(imageChan))
+	mux.HandleFunc(config.MainConfig.Server.Path, randomImageHandler(imageChan))
 
-	fmt.Printf("服务已经在本机的 %v%v/random 启动\n", config.MainConfig.Server.Host, config.MainConfig.Server.Port)
+	fmt.Printf("服务已经在本机的 %v%v%v 启动\n", config.MainConfig.Server.Host, config.MainConfig.Server.Port, config.MainConfig.Server.Path)
 	if err = http.ListenAndServe(config.MainConfig.Server.Port, mux); err != nil {
 		logger.Logger.Fatal("ListenAndServe: ", err)
 	}

@@ -14,6 +14,7 @@ type Config struct {
 	Server struct {
 		Port string `yaml:"port"`
 		Host string `yaml:"host"`
+		Path string `yaml:"path"`
 	} `yaml:"server"`
 	File struct {
 		Path string `yaml:"path"`
