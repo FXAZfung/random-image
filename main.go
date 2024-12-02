@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"fxaz-random-image/config"
 	"fxaz-random-image/logger"
+	"golang.org/x/time/rate"
 	"math/rand"
 	"net/http"
 	"os"
@@ -66,9 +67,27 @@ func closeChannel(imageChan chan *ImageData, wg *sync.WaitGroup) {
 	close(imageChan)
 }
 
-// HTTP 处理函数
-func randomImageHandler(imageChan chan *ImageData) http.HandlerFunc {
+var ipLimiters sync.Map // 存储每个 IP 的限流器
+
+func getIPLimiter(ip string) *rate.Limiter {
+	limiter, ok := ipLimiters.Load(ip)
+	if !ok {
+		limiter = rate.NewLimiter(5, 2) // 每秒允许 5 个请求，最多存储 2 个令牌
+		ipLimiters.Store(ip, limiter)
+	}
+	return limiter.(*rate.Limiter)
+}
+
+func randomImageHandlerWithIPRateLimit(imageChan chan *ImageData) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		clientIP := r.RemoteAddr // 提取客户端 IP
+		limiter := getIPLimiter(clientIP)
+
+		if !limiter.Allow() {
+			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+			return
+		}
+
 		image := <-imageChan // 从管道中取图片
 		if image == nil {
 			http.Error(w, "Failed to load image", http.StatusInternalServerError)
@@ -120,7 +139,7 @@ func main() {
 
 	// 创建基本路由
 	mux := http.NewServeMux()
-	mux.HandleFunc(config.MainConfig.Server.Path, randomImageHandler(imageChan))
+	mux.HandleFunc(config.MainConfig.Server.Path, randomImageHandlerWithIPRateLimit(imageChan))
 
 	fmt.Printf("服务已经在本机的 %v%v%v 启动\n", config.MainConfig.Server.Host, config.MainConfig.Server.Port, config.MainConfig.Server.Path)
 	if err = http.ListenAndServe(config.MainConfig.Server.Port, mux); err != nil {
