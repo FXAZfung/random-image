@@ -80,7 +80,12 @@ func getIPLimiter(ip string) *rate.Limiter {
 
 func randomImageHandlerWithIPRateLimit(imageChan chan *ImageData) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		clientIP := r.RemoteAddr // 提取客户端 IP
+
+		clientIP := r.Header.Get("X-Forwarded-For")
+		userAgent := r.Header.Get("User-Agent")
+		if clientIP == "" {
+			clientIP = r.RemoteAddr
+		}
 		limiter := getIPLimiter(clientIP)
 
 		if !limiter.Allow() {
@@ -96,7 +101,7 @@ func randomImageHandlerWithIPRateLimit(imageChan chan *ImageData) http.HandlerFu
 
 		// 记录请求信息
 		logger.Logger.Printf("Image: %v, IP: %s, User-Agent: %s",
-			image.Name, r.RemoteAddr, r.Header.Get("User-Agent"))
+			image.Name, clientIP, userAgent)
 
 		// 设置 HTTP 头部，返回图片内容
 		w.Header().Set("Content-Type", "image/jpeg") // 假设为 JPEG，可以动态判断类型
