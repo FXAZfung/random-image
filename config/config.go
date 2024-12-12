@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// Config 定义与 YAML 文件对应的结构体
+// config 定义与 YAML 文件对应的结构体
 type Config struct {
 	App struct {
 		Name    string `yaml:"name"`

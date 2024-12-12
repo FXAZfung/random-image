@@ -2,55 +2,24 @@ package main
 
 import (
 	"fmt"
-	"fxaz-random-image/config"
-	"fxaz-random-image/logger"
+	"github.com/FXAZfung/random-image/config"
+	"github.com/FXAZfung/random-image/logger"
+	"github.com/FXAZfung/random-image/model"
+	"github.com/FXAZfung/random-image/utils"
 	"golang.org/x/time/rate"
 	"math/rand"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sync"
 )
 
-// ImageData 用于存储图片的文件名和内容
-type ImageData struct {
-	Name    string
-	Content []byte
-}
-
-// 获取指定目录下的所有图片文件路径
-func getImages(dir string) ([]string, error) {
-	var images []string
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// 检查文件是否是图片
-		if !info.IsDir() && (filepath.Ext(path) == ".jpg" || filepath.Ext(path) == ".png" || filepath.Ext(path) == ".jpeg") {
-			images = append(images, path)
-		}
-		return nil
-	})
-	return images, err
-}
-
-// 从文件加载图片内容
-func loadImage(path string) (*ImageData, error) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return &ImageData{Name: filepath.Base(path), Content: content}, nil
-}
-
 // 随机选择图片并加载其内容到管道
-func producer(images []string, imageChan chan *ImageData, wg *sync.WaitGroup) {
+func producer(images []string, imageChan chan *model.ImageData, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for {
 		select {
-		case imageChan <- func() *ImageData {
+		case imageChan <- func() *model.ImageData {
 			path := images[rand.Intn(len(images))]
-			image, err := loadImage(path)
+			image, err := utils.LoadImage(path)
 			if err != nil {
 				logger.Logger.Printf("Error loading image %v: %v", path, err)
 				return nil
@@ -62,7 +31,7 @@ func producer(images []string, imageChan chan *ImageData, wg *sync.WaitGroup) {
 }
 
 // 关闭管道
-func closeChannel(imageChan chan *ImageData, wg *sync.WaitGroup) {
+func closeChannel(imageChan chan *model.ImageData, wg *sync.WaitGroup) {
 	wg.Wait()
 	close(imageChan)
 }
@@ -78,7 +47,7 @@ func getIPLimiter(ip string) *rate.Limiter {
 	return limiter.(*rate.Limiter)
 }
 
-func randomImageHandlerWithIPRateLimit(imageChan chan *ImageData) http.HandlerFunc {
+func randomImageHandlerWithIPRateLimit(imageChan chan *model.ImageData) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		clientIP := r.Header.Get("X-Forwarded-For")
@@ -116,6 +85,7 @@ func randomImageHandlerWithIPRateLimit(imageChan chan *ImageData) http.HandlerFu
 }
 
 func main() {
+
 	if err := config.InitConfig("./config.yml"); err != nil {
 		logger.Logger.Fatal("config init error ", err)
 	}
@@ -125,7 +95,7 @@ func main() {
 	}
 
 	imageDir := config.MainConfig.File.Path // 替换为本地图片文件夹路径
-	images, err := getImages(imageDir)
+	images, err := utils.GetImages(imageDir)
 	if err != nil {
 		logger.Logger.Fatal("Error reading images ", err)
 	}
@@ -135,7 +105,7 @@ func main() {
 	}
 
 	// 图片管道及同步机制
-	imageChan := make(chan *ImageData, 10) // 缓冲大小为 10
+	imageChan := make(chan *model.ImageData, 10) // 缓冲大小为 10
 	var wg sync.WaitGroup
 
 	// 启动生产者 Goroutine

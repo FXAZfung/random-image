@@ -1,4 +1,4 @@
-module fxaz-random-image
+module github.com/FXAZfung/random-image
 
 go 1.22
 

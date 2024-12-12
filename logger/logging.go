@@ -2,7 +2,7 @@ package logger
 
 import (
 	"fmt"
-	"fxaz-random-image/config"
+	"github.com/FXAZfung/random-image/config"
 	"log"
 	"os"
 	"time"
