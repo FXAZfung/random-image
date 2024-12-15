@@ -72,5 +72,4 @@ func Random(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 }

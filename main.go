@@ -15,7 +15,7 @@ import (
 // Producer 随机选择图片并加载其内容到管道
 func Producer(imageChan chan *model.ImageData) {
 
-	//去掉路径中的./
+	// 从配置文件中获取图片目录
 	config.MainConfig.File.Path = utils.GetLastElement(config.MainConfig.File.Path)
 	for {
 		select {

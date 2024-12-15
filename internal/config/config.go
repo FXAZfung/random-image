@@ -12,7 +12,8 @@ type Config struct {
 		Path string `yaml:"path"`
 	} `yaml:"server"`
 	File struct {
-		Path string `yaml:"path"`
+		Path  string `yaml:"path"`
+		Cache int    `yaml:"cache"`
 	} `yaml:"file"`
 	Limit struct {
 		Required bool `yaml:"required"`
