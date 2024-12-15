@@ -1,14 +1,13 @@
-package logger
+package initialize
 
 import (
 	"fmt"
-	"github.com/FXAZfung/random-image/config"
+	"github.com/FXAZfung/random-image/internal/config"
+	"github.com/FXAZfung/random-image/internal/logger"
 	"log"
 	"os"
 	"time"
 )
-
-var Logger *log.Logger
 
 func InitLogger() error {
 	// 定义日志文件路径
@@ -30,6 +29,6 @@ func InitLogger() error {
 	}
 
 	// 创建 logger
-	Logger = log.New(file, "", log.LstdFlags)
+	logger.Logger = log.New(file, "", log.LstdFlags)
 	return nil
 }

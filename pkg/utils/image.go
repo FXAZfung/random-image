@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/FXAZfung/random-image/model"
+	"github.com/FXAZfung/random-image/internal/model"
 	"os"
 	"path/filepath"
 )

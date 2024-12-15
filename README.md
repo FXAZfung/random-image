@@ -3,21 +3,21 @@
 ## 使用方法
 
 1. 下载二进制文件
-2. 修改目录下的config.yml文件
+2. 修改目录下的config.yaml文件
 3. 启动程序
-    1. 在Linux环境下给予可执行权限`chmod +x fxaz-random-image`
-    2. 运行`./fxaz-random-image`
+    1. 在Linux环境下给予可执行权限`chmod +x random-image`
+    2. 运行`./random-image`
 
 ```yaml
 app:
-  name: "fxaz-random-image" # 应用名称 可自行修改
-  version: "0.2.0" # 版本号
+   name: "random-image" # 应用名称 可自行修改
+   version: "0.3.0" # 版本号
 server:
-  port: ":11451" # 端口默认开放在11451中 可自行修改 不要忘记":"！
-  host: "localhost" # 主机名默认为localhost
-  path: "/random" # 路径默认为"/random" 可自行修改 不要忘记"/"！
+   port: ":11451" # 端口默认开放在11451中 可自行修改 不要忘记":"！
+   host: "localhost" # 主机名默认为localhost
+   path: "/random" # 路径默认为"/random" 可自行修改 不要忘记"/"！
 file:
-  path: "./images" # 图片存放路径 默认在当前目录下的"images"文件夹
+   path: "./images" # 图片存放路径 默认在当前目录下的"images"文件夹
 ```
 
 ## 注意事项
