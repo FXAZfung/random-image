@@ -9,16 +9,19 @@ import (
 	"github.com/FXAZfung/random-image/pkg/utils"
 	"github.com/FXAZfung/random-image/server"
 	"github.com/FXAZfung/random-image/server/common"
-	"math/rand"
 	"net/http"
 )
 
 // Producer 随机选择图片并加载其内容到管道
 func Producer(imageChan chan *model.ImageData) {
+
+	//去掉路径中的./
+	config.MainConfig.File.Path = utils.GetLastElement(config.MainConfig.File.Path)
 	for {
 		select {
 		case imageChan <- func() *model.ImageData {
-			path := common.Images[rand.Intn(len(common.Images))]
+			//从目录中随机获取一张图片
+			path := utils.Random(common.MapImages[config.MainConfig.File.Path])
 			image, err := utils.LoadImage(path)
 			if err != nil {
 				logger.Logger.Printf("Error loading image %v: %v", path, err)
