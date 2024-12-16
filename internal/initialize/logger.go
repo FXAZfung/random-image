@@ -9,26 +9,30 @@ import (
 	"time"
 )
 
+var currentLogFile string
+
 func InitLogger() error {
-	// 定义日志文件路径
+	return rotateLogFile()
+}
+
+func rotateLogFile() error {
 	logDir := "./log"
 	logFile := fmt.Sprintf("%s/%s-%02d-%02d.log", logDir, config.MainConfig.App.Name, time.Now().Month(), time.Now().Day())
 
-	// 确保日志目录存在，如果不存在则创建
-	err := os.MkdirAll(logDir, 0755)
-	if err != nil {
-		log.Fatalf("Error creating log directory: %v", err)
-		return err
+	if logFile == currentLogFile {
+		return nil
 	}
 
-	// 打开或创建日志文件
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return fmt.Errorf("error creating log directory: %w", err)
+	}
+
 	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		log.Fatalf("Error opening log file: %v", err)
-		return err
+		return fmt.Errorf("error opening log file: %w", err)
 	}
 
-	// 创建 logger
 	logger.Logger = log.New(file, "", log.LstdFlags)
+	currentLogFile = logFile
 	return nil
 }

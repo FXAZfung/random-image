@@ -11,5 +11,5 @@ func GetLastElement(path string) string {
 		path = path[:len(path)-1]
 	}
 	elements := strings.Split(path, "/")
-	return elements[len(elements)-1]
+	return LowerString(elements[len(elements)-1])
 }

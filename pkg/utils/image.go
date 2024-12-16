@@ -4,7 +4,6 @@ import (
 	"github.com/FXAZfung/random-image/internal/model"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // GetImages 获取目录下的以及所有子目录的所有图片
@@ -60,9 +59,4 @@ func LoadImage(path string) (*model.ImageData, error) {
 		return nil, err
 	}
 	return &model.ImageData{Name: filepath.Base(path), Content: content}, nil
-}
-
-// LowerString 将字符串改成小写
-func LowerString(s string) string {
-	return strings.ToLower(s)
 }

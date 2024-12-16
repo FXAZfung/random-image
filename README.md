@@ -19,18 +19,19 @@
 
 ```yaml
 app:
-   name: "random-image" # 应用名称 可自行修改
-   version: "0.3.0" # 版本号
+  name: "random-image" # 应用名称 可自行修改
+  version: "0.3.0" # 版本号
 server:
-   port: ":11451" # 端口默认开放在11451中 可自行修改 不要忘记":"！
-   host: "localhost" # 主机名默认为localhost
-   path: "/random" # 路径默认为"/random" 可自行修改 不要忘记"/"！
+  port: ":11451" # 端口默认开放在11451中 可自行修改 不要忘记":"！
+  host: "localhost" # 主机名默认为localhost
+  path: "/random" # 路径默认为"/random" 可自行修改 不要忘记"/"！
 file:
-   path: "./images" # 图片存放路径 默认在当前目录下的"images"文件夹
+  path: "./images" # 图片存放路径 默认在当前目录下的"images"文件夹
+  cache: 5 # 缓存的图片数量 默认为5 | 0代表不缓存
 limit: # 此限流配置是针对每个IP的
-   required: true # 是否开启限流 默认为true
-   rate: 10 # 限制每秒请求次数 默认为10次
-   bucket: 5 # 限制最多同时请求 默认为5次
+  required: true # 是否开启限流 默认为true
+  rate: 10 # 限制每秒请求次数 默认为10次
+  bucket: 5 # 限制最多同时请求 默认为5次
 ```
 
 
