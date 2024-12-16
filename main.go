@@ -31,12 +31,10 @@ func initApp(configPath string) error {
 // Producer 随机选择图片并加载其内容到管道 只有管道中的图片未满时，才会进行加载获取图片
 func Producer(imageChan chan *model.ImageData) {
 	MainPath := utils.GetLastElement(config.MainConfig.File.Path)
+
 	for {
-		if len(imageChan) < cap(imageChan) {
-			image := loadRandomImage(MainPath)
-			if image != nil {
-				imageChan <- image
-			}
+		select {
+		case imageChan <- loadRandomImage(MainPath):
 		}
 	}
 }
@@ -52,6 +50,9 @@ func loadRandomImage(path string) *model.ImageData {
 }
 
 func main() {
+
+	defer common.CloseChan()
+
 	configPath := flag.String("config", "./config.yaml", "Path to the configuration file")
 	flag.Parse()
 
@@ -68,5 +69,4 @@ func main() {
 		logger.Logger.Fatal("ListenAndServe: ", err)
 	}
 
-	defer common.CloseChan()
 }

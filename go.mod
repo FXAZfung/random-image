@@ -1,6 +1,6 @@
 module github.com/FXAZfung/random-image
 
-go 1.22
+go 1.23
 
 require (
 	golang.org/x/time v0.8.0
