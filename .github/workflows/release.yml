@@ -54,7 +54,6 @@ jobs:
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.VERSION }}
           files: |
             dist/random-image-linux-amd64.tar.gz
             dist/random-image-darwin-amd64.tar.gz
