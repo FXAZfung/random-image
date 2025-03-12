@@ -36,6 +36,7 @@ jobs:
       - name: Package artifacts
         run: |
           cd dist
+          mkdir images
           
           # Linux
           mkdir -p linux && cp ../config.yaml ../images -r random-image-linux-amd64 linux/
