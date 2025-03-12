@@ -12,7 +12,7 @@
 ## 图片分类
 
 - 请将图片放入images文件夹下的对应分类文件夹中
-- 例如：images文件夹下有一个分类文件夹叫做"cat"，那么访问`http://localhost:11451/random?category=cat`就会返回cat文件夹下的图片
+- 例如：images文件夹下有一个分类文件夹叫做"cat"，那么访问`http://localhost:11451/random?tag=cat`就会返回cat文件夹下的图片
 - 如果没有指定分类，那么会随机返回images文件夹下的图片
 
 ## 配置文件
