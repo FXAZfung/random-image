@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  release:
+    types: [published]  # 监听 Release 发布事件
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23  # 替换成你的 Go 版本
+
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go mod vendor
+
+      - name: Get version from GitHub Release
+        run: echo "VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+
+      - name: Build binaries
+        run: |
+          mkdir -p dist
+          GOOS=linux GOARCH=amd64 go build -o dist/random-image-linux-amd64 main.go
+          GOOS=darwin GOARCH=amd64 go build -o dist/random-image-darwin-amd64 main.go
+          GOOS=windows GOARCH=amd64 go build -o dist/random-image-windows-amd64.exe main.go
+
+      - name: Package artifacts
+        run: |
+          cd dist
+          
+          # Linux
+          mkdir -p linux && cp ../config.yaml ../images -r random-image-linux-amd64 linux/
+          tar -czvf random-image-linux-amd64.tar.gz -C linux .
+          
+          # macOS
+          mkdir -p darwin && cp ../config.yaml ../images -r random-image-darwin-amd64 darwin/
+          tar -czvf random-image-darwin-amd64.tar.gz -C darwin .
+          
+          # Windows
+          mkdir -p windows && cp ../config.yaml ../images -r random-image-windows-amd64.exe windows/
+          zip -r random-image-windows-amd64.zip windows
+
+          cd ..
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: |
+            dist/random-image-linux-amd64.tar.gz
+            dist/random-image-darwin-amd64.tar.gz
+            dist/random-image-windows-amd64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

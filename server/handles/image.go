@@ -21,7 +21,7 @@ func Random(w http.ResponseWriter, r *http.Request) {
 	if query == "" {
 		handleRandomImage(w, clientIP, userAgent)
 	} else {
-		handleCategoryImage(w, query, clientIP, userAgent)
+		handleTagImage(w, query, clientIP, userAgent)
 	}
 }
 
@@ -36,17 +36,17 @@ func handleRandomImage(w http.ResponseWriter, clientIP, userAgent string) {
 	writeImageResponse(w, image.Content)
 }
 
-func handleCategoryImage(w http.ResponseWriter, category, clientIP, userAgent string) {
-	images := common.MapImages[category]
+func handleTagImage(w http.ResponseWriter, tag, clientIP, userAgent string) {
+	images := common.MapImages[tag]
 	if images == nil {
-		http.Error(w, "Category not found", http.StatusNotFound)
+		http.Error(w, "Tag not found", http.StatusNotFound)
 		return
 	}
 
 	image, err := utils.LoadImage(utils.Random(images))
 	if err != nil {
 		logger.Logger.Printf("Error loading image: %v", err)
-		http.Error(w, "Failed to load image from category", http.StatusInternalServerError)
+		http.Error(w, "Failed to load image from tag", http.StatusInternalServerError)
 		return
 	}
 

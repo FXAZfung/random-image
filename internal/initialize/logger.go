@@ -6,22 +6,11 @@ import (
 	"github.com/FXAZfung/random-image/internal/logger"
 	"log"
 	"os"
-	"time"
 )
 
-var currentLogFile string
-
 func InitLogger() error {
-	return rotateLogFile()
-}
-
-func rotateLogFile() error {
 	logDir := "./log"
-	logFile := fmt.Sprintf("%s/%s-%02d-%02d.log", logDir, config.MainConfig.App.Name, time.Now().Month(), time.Now().Day())
-
-	if logFile == currentLogFile {
-		return nil
-	}
+	logFile := fmt.Sprintf("%s/%s.log", logDir, config.MainConfig.App.Name)
 
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return fmt.Errorf("error creating log directory: %w", err)
@@ -33,6 +22,5 @@ func rotateLogFile() error {
 	}
 
 	logger.Logger = log.New(file, "", log.LstdFlags)
-	currentLogFile = logFile
 	return nil
 }
