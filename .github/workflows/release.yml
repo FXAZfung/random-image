@@ -38,15 +38,15 @@ jobs:
           cd dist
       
           # Linux
-          mkdir -p linux && cp ../config.yaml -r random-image-linux-amd64 linux/
+          mkdir -p linux && mkdir -p images cp ../config.yaml -r random-image-linux-amd64 linux/
           tar -czvf random-image-linux-amd64.tar.gz -C linux .
           
           # macOS
-          mkdir -p darwin && cp ../config.yaml -r random-image-darwin-amd64 darwin/
+          mkdir -p darwin && mkdir -p images cp ../config.yaml -r random-image-darwin-amd64 darwin/
           tar -czvf random-image-darwin-amd64.tar.gz -C darwin .
           
           # Windows
-          mkdir -p windows && cp ../config.yaml -r random-image-windows-amd64.exe windows/
+          mkdir -p windows && mkdir -p images cp ../config.yaml -r random-image-windows-amd64.exe windows/
           zip -r random-image-windows-amd64.zip windows
 
           cd ..
