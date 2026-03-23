@@ -1,42 +1,206 @@
-# 随机图片服务
+# Random Image
 
-## 使用方法
+# random-image (v2)
 
-1. 下载二进制文件
-2. 修改目录下的config.yaml文件
-3. 选择要随机的图片目录放入images文件夹
-4. 启动程序
-    1. 在Linux环境下给予可执行权限`chmod +x random-image`
-    2. 运行`./random-image`
+⚠️ This project has been completely rewritten.
 
-## 图片分类
+- Legacy version: v1 branch
+- This version is NOT backward compatible
 
-- 请将图片放入images文件夹下的对应分类文件夹中
-- 例如：images文件夹下有一个分类文件夹叫做"cat"，那么访问`http://localhost:11451/random?tag=cat`就会返回cat文件夹下的图片
-- 如果没有指定分类，那么会随机返回images文件夹下的图片
+一个使用 Go 编写的随机图片接口服务，支持从本地目录或 Alist 后端读取图片，并以代理、跳转或 JSON 元信息的方式返回。
 
-## 配置文件
+## 特性
 
-```yaml
-app:
-  name: "random-image" # 应用名称 可自行修改
-  version: "0.3.0" # 版本号
-server:
-  port: ":11451" # 端口默认开放在11451中 可自行修改 不要忘记":"！
-  host: "localhost" # 主机名默认为localhost
-  path: "/random" # 路径默认为"/random" 可自行修改 不要忘记"/"！
-file:
-  path: "./images" # 图片存放路径 默认在当前目录下的"images"文件夹
-  cache: 5 # 缓存的图片数量 默认为5 | 0代表不缓存
-limit: # 此限流配置是针对每个IP的
-  required: true # 是否开启限流 默认为true
-  rate: 10 # 限制每秒请求次数 默认为10次
-  bucket: 5 # 限制最多同时请求 默认为5次
+- 单二进制部署，无数据库依赖
+- 同时支持 `local` 和 `alist` 两种存储后端
+- 支持图片预取和内存缓存
+- 支持按分类随机返回图片
+- 支持限流、封禁、健康检查
+- 支持 Docker 部署和 GitHub Actions 自动发布
+
+## 项目结构
+
+```text
+.
+├─ internal/
+│  ├─ alist/      # Alist 客户端
+│  ├─ cache/      # 图片缓存
+│  ├─ config/     # 配置加载与校验
+│  ├─ limiter/    # 限流与封禁
+│  ├─ picker/     # 分类扫描与随机选图
+│  ├─ proxy/      # 出站代理 HTTP 客户端
+│  ├─ server/     # HTTP 接口
+│  └─ storage/    # 存储抽象与实现
+├─ .github/workflows/
+├─ config.example.yaml
+├─ Dockerfile
+└─ main.go
 ```
 
+## 快速开始
 
-## 注意事项
+### 1. 克隆和构建
 
-- 此服务流量消耗为图片大小
-- 如果图片目录图片很多，启动服务的时候会比较慢
+```bash
+git clone https://github.com/<your-name>/random-image.git
+cd random-image
+go build -o random-image .
+```
 
+### 2. 准备配置
+
+项目仓库只提交 `config.example.yaml`。实际运行时请复制为 `config.yaml`：
+
+```bash
+cp config.example.yaml config.yaml
+```
+
+然后按你的环境修改 `config.yaml`。
+
+### 3. 运行
+
+```bash
+./random-image
+```
+
+调试模式会开启更详细的日志，并暴露本地 `pprof` 端口：
+
+```bash
+./random-image -debug
+```
+
+## 配置说明
+
+### 最小本地存储示例
+
+```yaml
+server:
+  address: ":8080"
+
+local:
+  enabled: true
+  base_path: "./images"
+
+alist:
+  enabled: false
+
+relay:
+  mode: "proxy"
+
+categories:
+  - name: "wallpaper"
+    storage: "local"
+    path: "wallpaper"
+    description: "本地壁纸"
+```
+
+### 最小 Alist 存储示例
+
+```yaml
+alist:
+  enabled: true
+  url: "https://alist.example.com"
+  token: "your-token"
+
+local:
+  enabled: false
+
+categories:
+  - name: "anime"
+    storage: "alist"
+    path: "/images/anime"
+    description: "动漫图片"
+```
+
+### 关键字段
+
+- `server.address`: HTTP 监听地址，默认 `:8080`
+- `alist.enabled`: 是否启用 Alist 后端
+- `local.enabled`: 是否启用本地目录后端
+- `outbound_proxy`: 服务端访问 Alist 或云盘时使用的代理
+- `relay.mode`: 默认返回模式，可选 `proxy`、`redirect`、`json`
+- `relay.cache_control_max_age`: 图片代理响应的缓存时间，配合 `ETag` / `Last-Modified` 使用
+- `cache`: 缓存大小、预取数量、过期时间
+- `limiter`: 限流和 IP 封禁配置
+- `startup.require_ready_category`: 启动后若没有可用分类则直接失败退出
+- `selection.avoid_repeats`: 每个分类短时间内尽量避免重复返回最近图片
+- `categories`: 图片分类列表，`storage` 必须是 `alist` 或 `local`
+
+敏感信息也可以通过环境变量覆盖，例如 `RI_ALIST_TOKEN`、`RI_ALIST_PASSWORD`、`RI_LOCAL_BASE_PATH`。
+
+完整可提交示例见 `config.example.yaml`。
+
+## API
+
+### `GET /api/{category}`
+
+随机返回指定分类的图片。
+
+查询参数：
+
+- `type=proxy`: 由服务端读取图片并直接返回
+- `type=redirect`: 返回 302 跳转，只有支持直链的存储后端可用
+- `type=json`: 返回图片路径和存储信息；Alist 后端可额外返回直链
+
+示例：
+
+```bash
+curl http://localhost:8080/api/anime
+curl -L "http://localhost:8080/api/anime?type=redirect"
+curl "http://localhost:8080/api/anime?type=json"
+```
+
+### `GET /api/categories`
+
+返回所有分类信息，包括名称、描述、存储类型和当前已扫描图片数量。
+
+### `GET /health`
+
+返回服务状态、缓存占用、限流器统计和当前默认 `relay_mode`。
+
+### `GET /`
+
+返回服务版本、接口入口和分类列表。
+
+## Docker
+
+### 本地构建
+
+```bash
+docker build -t random-image .
+docker run --rm -p 8080:8080 -v $(pwd)/config.yaml:/app/config.yaml random-image
+```
+
+### GHCR 镜像
+
+当推送 `v*` 标签时，GitHub Actions 会自动发布镜像到：
+
+```text
+ghcr.io/<owner>/<repo>:latest
+ghcr.io/<owner>/<repo>:v1.0.0
+```
+
+## 开源发布建议
+
+- 不要把真实的 `config.yaml`、Token、密码提交到仓库
+- 首次建仓后优先开启 GitHub Releases 和 Packages
+- 建议用语义化版本标签发布，例如 `v1.0.0`
+- 如果 `config.yaml` 之前已经被 Git 跟踪，需要先执行 `git rm --cached config.yaml`
+
+## CI/CD
+
+仓库已提供两套 GitHub Actions：
+
+- `ci.yml`: 在 push 和 pull request 时执行 `go test` 与构建检查
+- `release.yml`: 在推送 `v*` 标签时自动构建多平台二进制、生成校验文件、创建 GitHub Release，并发布 Docker 镜像到 GHCR
+
+发布方式：
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## License
+
+[MIT](LICENSE)

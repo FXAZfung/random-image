@@ -1,0 +1,58 @@
+server:
+  address: ":8080"
+  read_timeout: 10s
+  write_timeout: 30s
+
+alist:
+  enabled: true
+  url: "https://alist.example.com"
+  token: ""
+  username: ""
+  password: ""
+  timeout: 15s
+
+local:
+  enabled: true
+  base_path: "./images"
+
+outbound_proxy:
+  enabled: false
+  url: "socks5://127.0.0.1:1080"
+
+relay:
+  mode: "proxy"
+  max_body_size_mb: 20
+  user_agent: "RandomImage/dev"
+  cache_control_max_age: 30s
+
+cache:
+  max_size: 256
+  max_memory_mb: 512
+  prefetch_count: 5
+  prefetch_interval: 60s
+  ttl: 30m
+
+limiter:
+  enabled: true
+  rate: 30
+  burst: 10
+  cleanup_interval: 5m
+  ban_threshold: 100
+  ban_duration: 30m
+
+startup:
+  require_ready_category: true
+
+selection:
+  avoid_repeats: 5
+
+categories:
+  - name: "wallpaper"
+    storage: "local"
+    path: "wallpaper"
+    description: "Local wallpapers"
+
+  - name: "anime"
+    storage: "alist"
+    path: "/images/anime"
+    description: "Anime images from Alist"
