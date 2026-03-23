@@ -171,36 +171,6 @@ docker build -t random-image .
 docker run --rm -p 8080:8080 -v $(pwd)/config.yaml:/app/config.yaml random-image
 ```
 
-### GHCR 镜像
-
-当推送 `v*` 标签时，GitHub Actions 会自动发布镜像到：
-
-```text
-ghcr.io/<owner>/<repo>:latest
-ghcr.io/<owner>/<repo>:v1.0.0
-```
-
-## 开源发布建议
-
-- 不要把真实的 `config.yaml`、Token、密码提交到仓库
-- 首次建仓后优先开启 GitHub Releases 和 Packages
-- 建议用语义化版本标签发布，例如 `v1.0.0`
-- 如果 `config.yaml` 之前已经被 Git 跟踪，需要先执行 `git rm --cached config.yaml`
-
-## CI/CD
-
-仓库已提供两套 GitHub Actions：
-
-- `ci.yml`: 在 push 和 pull request 时执行 `go test` 与构建检查
-- `release.yml`: 在推送 `v*` 标签时自动构建多平台二进制、生成校验文件、创建 GitHub Release，并发布 Docker 镜像到 GHCR
-
-发布方式：
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
 ## License
 
 [MIT](LICENSE)
